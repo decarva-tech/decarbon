@@ -5,7 +5,19 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 8800;
 
-app.use(cors());
+// Express 5: 명시적 CORS origin 설정 (와일드카드 금지)
+app.use(cors({
+    origin: [
+        'http://localhost:3800',
+        'http://localhost:5173',
+        'https://decarbon-five.vercel.app',
+        'https://decarva.co.kr',
+        'https://www.decarva.co.kr',
+        'http://decarva.co.kr',
+        'http://www.decarva.co.kr'
+    ],
+    credentials: true
+}));
 app.use(express.json());
 
 // Serve static files from the React app
