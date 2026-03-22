@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 8800;
@@ -74,10 +75,41 @@ let menuItems = [
     { id: 'shipbuilding', name: '조선 (Shipbuilding)', link: '#' }
 ];
 
-// Admin Credentials
-const ADMIN_USER = {
-    email: "decarvaadmin@decarva.com",
-    password: "1234"
+// Categories
+let categories = [
+    { id: 'shipping', name: 'Shipping', color: '#3b82f6' },
+    { id: 'it', name: 'IT', color: '#8b5cf6' },
+    { id: 'shipbuilding', name: 'Shipbuilding', color: '#10b981' },
+    { id: 'market', name: 'Market', color: '#f59e0b' },
+    { id: 'news', name: 'News', color: '#64748b' }
+];
+
+// Admin Credentials (mutable for password change)
+let ADMIN_USER = {
+    email: "decarbon@decarva.co.kr",
+    password: "00000000"
+};
+
+// Verification code storage
+let verificationStore = {
+    code: null,
+    expiresAt: null,
+    newPassword: null
+};
+
+// Email transporter (Hiworks SMTP configuration)
+const SMTP_CONFIG = {
+    host: 'smtp.hiworks.com',
+    port: 465,
+    secure: true, // SSL
+    auth: {
+        user: process.env.SMTP_USER || 'decarbon@decarva.co.kr',
+        pass: process.env.SMTP_PASS || 'decarb0nizer#'
+    }
+};
+
+const createTransporter = () => {
+    return nodemailer.createTransport(SMTP_CONFIG);
 };
 
 // Auth Middleware (Simplified for demo)
@@ -287,6 +319,110 @@ app.put('/api/menu', adminOnly, (req, res) => {
     } else {
         res.status(400).json({ message: "Invalid data format" });
     }
+});
+
+// Category Management Endpoints
+app.get('/api/categories', (req, res) => {
+    res.json(categories);
+});
+
+app.put('/api/categories', adminOnly, (req, res) => {
+    const updatedCategories = req.body;
+    if (Array.isArray(updatedCategories)) {
+        categories = updatedCategories;
+        res.json(categories);
+    } else {
+        res.status(400).json({ message: "Invalid data format" });
+    }
+});
+
+// Password Change: Step 1 - Send verification code
+app.post('/api/send-verification-code', adminOnly, async (req, res) => {
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 4) {
+        return res.status(400).json({ message: '새 비밀번호는 최소 4자 이상이어야 합니다.' });
+    }
+
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+
+    verificationStore = { code, expiresAt, newPassword };
+
+    console.log(`\n===================================`);
+    console.log(`[인증 코드] ${code}`);
+    console.log(`[발송 대상] ${ADMIN_USER.email}`);
+    console.log(`[만료 시간] 5분`);
+    console.log(`===================================\n`);
+
+    // Try to send email
+    try {
+        const smtpPass = SMTP_CONFIG.auth.pass;
+        if (!smtpPass) {
+            console.log('[이메일] SMTP 비밀번호가 설정되지 않아 이메일 발송을 건너뜁니다. 서버 콘솔의 인증 코드를 사용하세요.');
+            return res.json({ 
+                success: true, 
+                message: '인증 코드가 생성되었습니다.',
+                emailSent: false,
+                hint: '서버 콘솔에서 인증 코드를 확인하세요.'
+            });
+        }
+
+        const transporter = createTransporter();
+        await transporter.sendMail({
+            from: `"Decarva Admin" <${SMTP_CONFIG.auth.user}>`,
+            to: ADMIN_USER.email,
+            subject: '[Decarva] 비밀번호 변경 인증 코드',
+            html: `
+                <div style="font-family: 'Helvetica', sans-serif; max-width: 480px; margin: 0 auto; padding: 2rem;">
+                    <h2 style="color: #0f1e3a; margin-bottom: 1rem;">비밀번호 변경 인증</h2>
+                    <p style="color: #64748b; margin-bottom: 1.5rem;">아래 인증 코드를 입력하여 비밀번호 변경을 완료하세요.</p>
+                    <div style="background: #f1f5f9; padding: 1.5rem; border-radius: 0.75rem; text-align: center; margin-bottom: 1.5rem;">
+                        <span style="font-size: 2rem; font-weight: 800; color: #ff8031; letter-spacing: 0.3em;">${code}</span>
+                    </div>
+                    <p style="color: #94a3b8; font-size: 0.85rem;">이 코드는 5분 후 만료됩니다.</p>
+                    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0;" />
+                    <p style="color: #94a3b8; font-size: 0.75rem;">본인이 요청하지 않은 경우 이 이메일을 무시해 주세요.</p>
+                </div>
+            `
+        });
+
+        console.log('[이메일] 인증 코드 이메일 발송 완료');
+        res.json({ success: true, message: '인증 코드가 이메일로 발송되었습니다.', emailSent: true });
+    } catch (error) {
+        console.error('[이메일] 발송 실패:', error.message);
+        res.json({ 
+            success: true, 
+            message: '인증 코드가 생성되었습니다. (이메일 발송 실패 - 서버 콘솔 확인)',
+            emailSent: false,
+            hint: '서버 콘솔에서 인증 코드를 확인하세요.'
+        });
+    }
+});
+
+// Password Change: Step 2 - Verify code and change password
+app.post('/api/change-password', adminOnly, (req, res) => {
+    const { code } = req.body;
+
+    if (!verificationStore.code) {
+        return res.status(400).json({ message: '인증 코드가 요청되지 않았습니다. 먼저 인증 코드를 요청해 주세요.' });
+    }
+
+    if (Date.now() > verificationStore.expiresAt) {
+        verificationStore = { code: null, expiresAt: null, newPassword: null };
+        return res.status(400).json({ message: '인증 코드가 만료되었습니다. 다시 요청해 주세요.' });
+    }
+
+    if (code !== verificationStore.code) {
+        return res.status(400).json({ message: '인증 코드가 올바르지 않습니다.' });
+    }
+
+    // Change password
+    ADMIN_USER.password = verificationStore.newPassword;
+    verificationStore = { code: null, expiresAt: null, newPassword: null };
+
+    console.log(`[비밀번호 변경] 관리자 비밀번호가 변경되었습니다.`);
+    res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
 });
 
 // The "catchall" handler: for any request that doesn't
