@@ -1,55 +1,75 @@
-import React from 'react';
-import { Search, Bell, User, LogOut, Shield } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import API_BASE from '../api';
+import { Search, Globe, User, ChevronDown, Settings, Menu, X } from 'lucide-react';
 
-const Header = ({ onSearch, user, onLoginClick, onLogout }) => {
+const Header = ({ onSearch, user, onLoginClick, onLogout, isAdmin, onMenuEditClick }) => {
+  const [menuItems, setMenuItems] = useState([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/menu`);
+        setMenuItems(res.data);
+      } catch (e) {
+        console.error("Error fetching menu items:", e);
+      }
+    };
+    fetchMenu();
+  }, []);
+
   return (
-    <header className="glass">
-      <div className="search-container">
-        <Search size={18} className="text-slate-400" />
-        <input 
-          type="text" 
-          placeholder="해운 뉴스, 선박 데이터 검색..." 
-          onChange={(e) => onSearch(e.target.value)}
-        />
+    <header>
+      <div className="logo-container" onClick={() => window.location.href = '/'}>
+        <img src="/logo.png" alt="Decarva" style={{ height: '40px', width: 'auto' }} />
+        <span className="logo-text">DECARVA</span>
       </div>
 
-      <div className="flex items-center gap-6" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-        <div className="relative cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
-          <Bell size={20} />
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></span>
-        </div>
+      <nav className={`top-nav-menu ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+        <a href="https://www.co-fleeter.com" target="_blank" rel="noopener noreferrer" className="top-nav-item">Co-Fleeter</a>
+        <a href="https://ssrpms.onrender.com" target="_blank" rel="noopener noreferrer" className="top-nav-item">SSRPMS</a>
+        <div className="top-nav-item">Services <ChevronDown size={14} /></div>
+        <div className="top-nav-item">Resources <ChevronDown size={14} /></div>
+        <div className="top-nav-item">About <ChevronDown size={14} /></div>
+      </nav>
+
+      <div className={`header-right ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+        <button className="search-icon-btn"><Search size={22} /></button>
+        <button className="global-icon-btn"><Globe size={22} /></button>
+        
+        <button className="btn-demo">Request Demo</button>
         
         {user && user.user ? (
-          <div className="flex items-center gap-4" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
-              <Shield size={14} className="text-blue-400" />
-              <span className="text-xs font-bold text-blue-400">ADMIN</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-slate-300">
-              <User size={18} />
+          <div className="flex items-center gap-4 user-info-container">
+             {isAdmin && (
+              <button 
+                onClick={onMenuEditClick} 
+                className="btn-login-outline" 
+                style={{ height: '38px', padding: '0 1rem', borderStyle: 'dashed', borderColor: '#cbd5e1' }}
+              >
+                <Settings size={18} /> Admin
+              </button>
+            )}
+            <div className="flex items-center gap-2 font-bold text-[#0f1e3a]">
+              <User size={20} />
               <span>{user.user.email.split('@')[0]}</span>
             </div>
-            <button 
-              onClick={onLogout}
-              className="p-2 hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-all text-slate-400"
-              title="로그아웃"
-            >
-              <LogOut size={20} />
-            </button>
+            <button onClick={onLogout} className="btn-login-outline" style={{ height: '38px', padding: '0 1rem' }}>Log Out</button>
           </div>
         ) : (
-          <div 
-            onClick={onLoginClick}
-            className="flex items-center gap-3 cursor-pointer group" 
-            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}
-          >
-            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600 group-hover:border-blue-500 transition-colors">
-              <User size={18} className="text-slate-300" />
-            </div>
-            <span className="text-sm font-medium hover:text-blue-400 transition-colors">로그인</span>
-          </div>
+          <button onClick={() => { onLoginClick(); setIsMobileMenuOpen(false); }} className="btn-login-outline">
+            <User size={18} /> Log In
+          </button>
         )}
       </div>
+
+      <button 
+        className="mobile-menu-toggle" 
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+      >
+        {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+      </button>
     </header>
   );
 };

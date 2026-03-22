@@ -56,20 +56,20 @@ const MenuManagementModal = ({ isOpen, onClose, user, onSaveSuccess }) => {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content glass" style={{ maxWidth: '600px' }}>
-        <div className="modal-header">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <LinkIcon size={24} className="text-blue-400" />
-            사이드바 메뉴 링크 관리
+      <div className="modal-content" style={{ maxWidth: '600px' }}>
+        <div className="modal-header flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold flex items-center gap-2 text-[#0f1e3a] font-outfit">
+            <LinkIcon size={24} className="text-[#ff8031]" />
+            메뉴 링크 관리
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-            <X size={24} />
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+            <X size={24} className="text-slate-400" />
           </button>
         </div>
 
         <div className="modal-body py-4">
-          <p className="text-sm text-slate-400 mb-6">
-            사이드바 메뉴의 각 항목이 클릭되었을 때 이동할 외부 사이트 URL을 관리할 수 있습니다. 
+          <p className="text-sm text-slate-500 mb-6">
+            상단 메뉴의 각 항목이 클릭되었을 때 이동할 외부 사이트 URL을 관리할 수 있습니다. 
             변경 사항은 저장 후 모든 사용자에게 적용됩니다.
           </p>
           
@@ -77,22 +77,23 @@ const MenuManagementModal = ({ isOpen, onClose, user, onSaveSuccess }) => {
             {menuItems.map((item) => {
               const Icon = iconMap[item.id] || Anchor;
               return (
-                <div key={item.id} className="p-4 rounded-xl bg-slate-800/50 border border-slate-700">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
-                      <Icon size={18} />
+                <div key={item.id} className="p-5 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-[#ff8031]/10 flex items-center justify-center text-[#ff8031]">
+                      <Icon size={20} />
                     </div>
-                    <span className="font-bold text-slate-200">{item.name}</span>
+                    <span className="font-bold text-[#0f1e3a]">{item.name}</span>
                   </div>
-                  <div className="relative">
+                  <div className="relative" style={{ position: 'relative' }}>
                     <input
                       type="text"
                       value={item.link}
                       onChange={(e) => handleChange(item.id, e.target.value)}
                       placeholder="https://example.com"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-300 focus:border-blue-500 transition-colors pl-10"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm text-[#0f1e3a] focus:border-[#ff8031] transition-colors pl-10 outline-none"
+                      style={{ width: '100%', paddingLeft: '2.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', background: 'white' }}
                     />
-                    <LinkIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <LinkIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
                   </div>
                 </div>
               );
@@ -100,19 +101,20 @@ const MenuManagementModal = ({ isOpen, onClose, user, onSaveSuccess }) => {
           </div>
         </div>
 
-        <div className="modal-footer flex gap-3 justify-end mt-6">
+        <div className="modal-footer flex gap-3 justify-end mt-8" style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
           <button 
             onClick={onClose}
-            className="px-6 py-2.5 rounded-xl font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+            className="px-6 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-all"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.75rem 1.5rem', borderRadius: '0.75rem' }}
           >
             취소
           </button>
           <button 
             onClick={handleSave}
             disabled={loading}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
+            className="btn-demo"
+            style={{ padding: '0.75rem 2rem' }}
           >
-            <Save size={20} />
             {loading ? "저장 중..." : "변경 사항 저장"}
           </button>
         </div>

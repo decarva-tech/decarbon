@@ -75,7 +75,7 @@ const NewsEditModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                       name="title"
                       value={formData.title}
                       onChange={handleChange}
-                      className="w-full bg-slate-800/50 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-white focus:border-blue-500 outline-none"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 text-[#0f1e3a] focus:border-[#ff8031] outline-none"
                       placeholder="뉴스 제목을 입력하세요"
                       required
                     />
@@ -90,7 +90,7 @@ const NewsEditModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                       name="summary"
                       value={formData.summary}
                       onChange={handleChange}
-                      className="w-full bg-slate-800/50 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-white focus:border-blue-500 outline-none min-h-[100px]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 text-[#0f1e3a] focus:border-[#ff8031] outline-none min-h-[100px]"
                       placeholder="내용 요약을 입력하세요"
                       required
                     />
@@ -105,7 +105,7 @@ const NewsEditModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                       name="image"
                       value={formData.image}
                       onChange={handleChange}
-                      className="w-full bg-slate-800/50 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-white focus:border-blue-500 outline-none"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 text-[#0f1e3a] focus:border-[#ff8031] outline-none"
                       placeholder="https://..."
                     />
                   </div>
@@ -119,7 +119,7 @@ const NewsEditModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                       name="link"
                       value={formData.link}
                       onChange={handleChange}
-                      className="w-full bg-slate-800/50 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-white focus:border-blue-500 outline-none"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 text-[#0f1e3a] focus:border-[#ff8031] outline-none"
                       placeholder="https://..."
                     />
                   </div>
@@ -131,7 +131,7 @@ const NewsEditModal = ({ isOpen, onClose, onSave, initialData = null }) => {
                     name="source"
                     value={formData.source}
                     onChange={handleChange}
-                    className="w-full bg-slate-800/50 border border-slate-700 rounded-lg py-2 px-4 text-white focus:border-blue-500 outline-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-4 text-[#0f1e3a] focus:border-[#ff8031] outline-none"
                     placeholder="예: Maritime News"
                   />
                 </div>

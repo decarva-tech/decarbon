@@ -1,11 +1,15 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
-const PORT = 8800;
+const PORT = process.env.PORT || 8800;
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // Mutable news data
 let news = [
@@ -72,7 +76,7 @@ let menuItems = [
 
 // Admin Credentials
 const ADMIN_USER = {
-    email: "badaroadmin@badaro.com",
+    email: "decarvaadmin@decarva.com",
     password: "1234"
 };
 
@@ -86,6 +90,106 @@ const adminOnly = (req, res, next) => {
     }
 };
 
+const SHEET_ID = '1MgwthoOxFmhPRj--RvP0fUS9f-IRrBzGy_z00xDXQpA';
+
+async function fetchSheetData(sheetName) {
+    try {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+        const res = await fetch(url);
+        const text = await res.text();
+        const rows = text.split('\n').filter(r => r.trim()).slice(1); // skip header
+        return rows.map(row => {
+            // Robust CSV split for "No","Address" format
+            const columns = row.split('","').map(col => col.replace(/"/g, '').trim());
+            return {
+                no: columns[0],
+                address: columns[1]
+            };
+        }).filter(item => item.address && item.address.startsWith('http'));
+    } catch (error) {
+        console.error(`Error fetching sheet ${sheetName}:`, error);
+        return [];
+    }
+}
+
+async function fetchMetadata(url, isMain = false) {
+    try {
+        console.log(`Scraping: ${url}`);
+        const res = await fetch(url, { 
+            signal: AbortSignal.timeout(10000), 
+            headers: { 
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9,ko;q=0.8',
+                'Referer': 'https://www.google.com/'
+            } 
+        });
+        
+        const html = await res.text();
+        
+        const getMeta = (prop) => {
+            const propRegex = new RegExp(`<meta [^>]*property=["'](?:og:)?${prop}["'] [^>]*content=["']([^"']*)["']`, 'i');
+            const nameRegex = new RegExp(`<meta [^>]*name=["'](?:og:)?${prop}["'] [^>]*content=["']([^"']*)["']`, 'i');
+            const contentFirstPropRegex = new RegExp(`<meta [^>]*content=["']([^"']*)["'] [^>]*property=["'](?:og:)?${prop}["']`, 'i');
+            const contentFirstNameRegex = new RegExp(`<meta [^>]*content=["']([^"']*)["'] [^>]*name=["'](?:og:)?${prop}["']`, 'i');
+            
+            const match = html.match(propRegex) || html.match(nameRegex) || html.match(contentFirstPropRegex) || html.match(contentFirstNameRegex);
+            return match ? (match[1] || null) : null;
+        };
+
+        const rawTitle = getMeta('title') || (html.match(/<title>(.*?)<\/title>/i) || [])[1] || url;
+        const description = getMeta('description') || "";
+        let image = getMeta('image') || getMeta('twitter:image');
+
+        // Fallback: search for first <img> that might be the featured image
+        if (!image) {
+            const imgRegex = /<img [^>]*src=["']([^"']*)["']/gi;
+            let imgMatch;
+            while ((imgMatch = imgRegex.exec(html)) !== null) {
+                const src = imgMatch[1];
+                if (src.includes('logo') || src.includes('icon') || src.includes('default') || src.length < 10) continue;
+                image = src;
+                break;
+            }
+        }
+
+        // Make image URL absolute if needed
+        if (image && !image.startsWith('http')) {
+            try {
+                image = new URL(image, url).href;
+            } catch (e) {
+                console.error("Error formatting image URL:", e);
+            }
+        }
+
+        const siteName = getMeta('site_name') || new URL(url).hostname;
+
+        return {
+            id: Math.random().toString(36).substr(2, 9),
+            title: rawTitle.trim(),
+            summary: description.trim(),
+            image: image || "https://images.unsplash.com/photo-1544256718-3bcf237f3974?q=80&w=1000&auto=format&fit=crop",
+            source: siteName,
+            link: url,
+            date: new Date().toISOString().split('T')[0],
+            category: "News",
+            isMain
+        };
+    } catch (e) {
+        return {
+            id: Math.random().toString(36).substr(2, 9),
+            title: url,
+            summary: "내용을 불러올 수 없습니다.",
+            image: "https://images.unsplash.com/photo-1544256718-3bcf237f3974?q=80&w=1000&auto=format&fit=crop",
+            source: new URL(url).hostname,
+            link: url,
+            date: new Date().toISOString().split('T')[0],
+            category: "News",
+            isMain
+        };
+    }
+}
+
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     if (email === ADMIN_USER.email && password === ADMIN_USER.password) {
@@ -95,17 +199,51 @@ app.post('/api/login', (req, res) => {
     }
 });
 
-app.get('/api/news', (req, res) => {
-    res.json(news);
+app.get('/api/news', async (req, res) => {
+    try {
+        console.log("Fetching sheet data...");
+        const [mainData, newsData] = await Promise.all([
+            fetchSheetData('Main Sheet'),
+            fetchSheetData('NEWS')
+        ]);
+        console.log(`Found ${mainData.length} items in Main, ${newsData.length} in NEWS`);
+
+        const mainItems = await Promise.all(mainData.slice(0, 4).map(item => {
+            console.log(`Scraping Main: ${item.address}`);
+            return fetchMetadata(item.address, true);
+        }));
+        const recentItems = await Promise.all(newsData.slice(0, 10).map(item => {
+            console.log(`Scraping NEWS: ${item.address}`);
+            return fetchMetadata(item.address, false);
+        }));
+
+        console.log("All scraping done.");
+        res.json([...mainItems, ...recentItems]);
+    } catch (error) {
+        console.error("Error in /api/news:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
 });
 
-app.get('/api/news/search', (req, res) => {
+app.get('/api/news/search', async (req, res) => {
     const query = req.query.q ? req.query.q.toLowerCase() : "";
-    const filteredNews = news.filter(n => 
-        n.title.toLowerCase().includes(query) || 
-        n.summary.toLowerCase().includes(query)
-    );
-    res.json(filteredNews);
+    try {
+        // For search, we still fetch fresh but maybe more items or just filter current
+        // For now, let's just filter the combined set
+        const [mainData, newsData] = await Promise.all([
+            fetchSheetData('Main Sheet'),
+            fetchSheetData('NEWS')
+        ]);
+        const allUrls = [...mainData, ...newsData];
+        const items = await Promise.all(allUrls.slice(0, 20).map(item => fetchMetadata(item.address)));
+        const filteredNews = items.filter(n => 
+            n.title.toLowerCase().includes(query) || 
+            n.summary.toLowerCase().includes(query)
+        );
+        res.json(filteredNews);
+    } catch (error) {
+        res.status(500).json({ message: "Error searching news" });
+    }
 });
 
 // Admin CRUD Operations
@@ -151,6 +289,16 @@ app.put('/api/menu', adminOnly, (req, res) => {
     }
 });
 
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+        res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+    } else {
+        next();
+    }
+});
+
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
