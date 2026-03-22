@@ -10,7 +10,11 @@ app.use(cors({
     origin: [
         'http://localhost:3800',
         'http://localhost:5173',
-        'https://decarbon-five.vercel.app'
+        'https://decarbon-five.vercel.app',
+        'https://decarva.co.kr',
+        'https://www.decarva.co.kr',
+        'http://decarva.co.kr',
+        'http://www.decarva.co.kr'
     ],
     credentials: true
 }));
