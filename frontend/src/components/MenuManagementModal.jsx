@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Link as LinkIcon, Ship, ShoppingCart, Anchor, Laptop, Hammer } from 'lucide-react';
 import axios from 'axios';
+import API_BASE from '../api';
 
 const MenuManagementModal = ({ isOpen, onClose, user, onSaveSuccess }) => {
   const [menuItems, setMenuItems] = useState([]);
@@ -22,7 +23,7 @@ const MenuManagementModal = ({ isOpen, onClose, user, onSaveSuccess }) => {
 
   const fetchMenu = async () => {
     try {
-      const res = await axios.get('http://localhost:8800/api/menu');
+      const res = await axios.get(`${API_BASE}/api/menu`);
       setMenuItems(res.data);
     } catch (error) {
       console.error("Error fetching menu items:", error);
@@ -41,7 +42,7 @@ const MenuManagementModal = ({ isOpen, onClose, user, onSaveSuccess }) => {
       const config = {
         headers: { Authorization: user.token }
       };
-      await axios.put('http://localhost:8800/api/menu', menuItems, config);
+      await axios.put(`${API_BASE}/api/menu`, menuItems, config);
       onSaveSuccess();
       onClose();
     } catch (error) {

@@ -147,6 +147,48 @@ const NewsEditModal = ({ isOpen, onClose, onSave, initialData = null, categories
                   onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
                 />
               </div>
+            <button 
+              onClick={onClose}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+            >
+              <X size={24} />
+            </button>
+
+            <h2 className="text-2xl font-bold text-white mb-6">
+              {initialData ? '뉴스 수정' : '새 뉴스 작성'}
+            </h2>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-1">제목</label>
+                  <div className="relative">
+                    <Type className="absolute left-3 top-3 text-slate-500" size={18} />
+                    <input 
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 text-[#0f1e3a] focus:border-[#ff8031] outline-none"
+                      placeholder="뉴스 제목을 입력하세요"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-1">요약</label>
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-3 text-slate-500" size={18} />
+                    <textarea 
+                      name="summary"
+                      value={formData.summary}
+                      onChange={handleChange}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 text-[#0f1e3a] focus:border-[#ff8031] outline-none min-h-[100px]"
+                      placeholder="내용 요약을 입력하세요"
+                      required
+                    />
+                  </div>
+                </div>
 
               {/* Summary */}
               <div style={{ marginBottom: '1.25rem' }}>
@@ -182,6 +224,17 @@ const NewsEditModal = ({ isOpen, onClose, onSave, initialData = null, categories
                     onFocus={e => { e.target.style.borderColor = '#ff8031'; e.target.style.boxShadow = '0 0 0 3px rgba(255,128,49,0.1)'; }}
                     onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
                   />
+                  <label className="block text-sm font-medium text-slate-300 mb-1">이미지 URL</label>
+                  <div className="relative">
+                    <ImageIcon className="absolute left-3 top-3 text-slate-500" size={18} />
+                    <input 
+                      name="image"
+                      value={formData.image}
+                      onChange={handleChange}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 text-[#0f1e3a] focus:border-[#ff8031] outline-none"
+                      placeholder="https://..."
+                    />
+                  </div>
                 </div>
                 <div>
                   <label style={labelStyle}>
@@ -197,6 +250,17 @@ const NewsEditModal = ({ isOpen, onClose, onSave, initialData = null, categories
                     onFocus={e => { e.target.style.borderColor = '#ff8031'; e.target.style.boxShadow = '0 0 0 3px rgba(255,128,49,0.1)'; }}
                     onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
                   />
+                  <label className="block text-sm font-medium text-slate-300 mb-1">외부 링크</label>
+                  <div className="relative">
+                    <LinkIcon className="absolute left-3 top-3 text-slate-500" size={18} />
+                    <input 
+                      name="link"
+                      value={formData.link}
+                      onChange={handleChange}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 text-[#0f1e3a] focus:border-[#ff8031] outline-none"
+                      placeholder="https://..."
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -212,6 +276,7 @@ const NewsEditModal = ({ isOpen, onClose, onSave, initialData = null, categories
                     value={formData.source}
                     onChange={handleChange}
                     style={inputStyle}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-4 text-[#0f1e3a] focus:border-[#ff8031] outline-none"
                     placeholder="예: Maritime News"
                     onFocus={e => { e.target.style.borderColor = '#ff8031'; e.target.style.boxShadow = '0 0 0 3px rgba(255,128,49,0.1)'; }}
                     onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
